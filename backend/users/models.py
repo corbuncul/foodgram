@@ -5,6 +5,7 @@ from django.db import models
 
 from api import constants
 
+
 class User(AbstractUser):
     """Модель пользователя."""
 
@@ -45,10 +46,14 @@ class User(AbstractUser):
         max_length=constants.NAME_MAX_LENGTH
     )
     avatar = models.ImageField(
-        'аватар', upload_to='users/', blank=True
+        'аватар', upload_to='users/', blank=True, null=True
     )
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username',]
+    REQUIRED_FIELDS = [
+        'username',
+        'first_name',
+        'last_name',
+    ]
 
     class Meta:
         verbose_name = 'Пользователь'
