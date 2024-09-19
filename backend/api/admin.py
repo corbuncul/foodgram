@@ -23,11 +23,21 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+class IngredientInline(admin.StackedInline):
+    model = IngredientInRecipe
+    extra = 0
+
+
 class TagAdmin(admin.ModelAdmin):
     """Админка для тегов."""
 
     list_display = ('pk', 'name', 'slug',)
     search_fields = ('name', 'slug',)
+
+
+class TagInline(admin.StackedInline):
+    model = RecipeTag
+    extra = 0
 
 
 class IngredientInRecipeAdmin(admin.ModelAdmin):
@@ -41,6 +51,7 @@ class IngredientInRecipeAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     """Админка для рецептов."""
 
+    inlines = [IngredientInline, TagInline]
     list_display = ('pk', 'name', 'author', 'cooking_time', 'text', 'image', 'short_link')
     search_fields = ('name', 'author',)
     list_filter = ('name', 'author',)

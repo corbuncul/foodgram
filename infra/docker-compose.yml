@@ -1,6 +1,12 @@
 version: '3.3'
 services:
-
+  
+  backend:
+    container_name: foodgram-backend
+    build: ../backend
+    volumes:
+      - ../backend/db.sqlite3:/app/db.sqlite3
+      - ../backend/media/:/media/
   frontend:
     container_name: foodgram-front
     build: ../frontend

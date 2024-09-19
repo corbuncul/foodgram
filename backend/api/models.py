@@ -77,7 +77,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         upload_to='recipe/images/',
-        null=True,
+        blank=True,
         default=None,
         verbose_name='Изображение рецепта'
     )
@@ -86,10 +86,6 @@ class Recipe(models.Model):
         related_name='recipes',
         on_delete=models.CASCADE,
         verbose_name='Автор'
-    )
-    ingredients = models.ManyToManyField(
-        Ingredient, through='IngredientInRecipe',
-        verbose_name='Ингредиенты'
     )
     tags = models.ManyToManyField(
         Tag, through='RecipeTag',
@@ -109,11 +105,14 @@ class Recipe(models.Model):
         max_length=constants.LINK_MAX_LENGTH,
         unique=True,
     )
+    pub_date = models.DateTimeField(
+        'Дата публикации', auto_now_add=True
+    )
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('name',)
+        ordering = ('pub_date',)
 
     def __str__(self):
         return f'{self.name}'
@@ -125,7 +124,8 @@ class IngredientInRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        related_name='ingredients'
     )
     ingredient = models.ForeignKey(
         Ingredient,
@@ -170,6 +170,7 @@ class RecipeTag(models.Model):
     def __str__(self):
         return f'{self.recipe.name} {self.tag.name}'
 
+
 class UserRecipeModel(models.Model):
     """Базовая модель для списка покупок и избранного."""
 
@@ -197,7 +198,7 @@ class ShoppingCart(UserRecipeModel):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
-        default_related_name = 'shopping_cart'
+        default_related_name = 'is_in_shopping_cart'
 
 
 class Favorites(UserRecipeModel):
@@ -206,4 +207,4 @@ class Favorites(UserRecipeModel):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        default_related_name = 'favorites'
+        default_related_name = 'is_favorited'
