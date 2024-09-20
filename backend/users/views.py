@@ -6,10 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from users.serializers import (
-    AvatarSerializer, FollowSerializer
-)
-from api.serializers import UserRecipeSerializer
+from users.serializers import AvatarSerializer
+from api.serializers import FollowSerializer, UserRecipeSerializer
 from api.permissions import IsCurrentUser
 from users.models import Follow
 
@@ -67,12 +65,13 @@ class UserViewSet(BaseUserViewSet):
             'following', flat=True
         )
         followings = [User.objects.get(id=id) for id in followings_id]
-        serializer = UserRecipeSerializer(followings, many=True, context={'request': request})
+        serializer = UserRecipeSerializer(
+            followings, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
         ['post', 'delete',], detail=True,
-        permission_classes = (IsAuthenticated,)
+        permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, *args, **kwargs):
         """Экшн для подписки."""

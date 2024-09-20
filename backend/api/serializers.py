@@ -4,7 +4,7 @@ from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from djoser.serializers import UserSerializer as BaseUserSerializer
+
 from api import constants
 from api.models import (
     Favorites, Ingredient, IngredientInRecipe,
@@ -268,6 +268,46 @@ class DownloadShoppingCartSerializer(serializers.Serializer):
     class Meta:
         fields = ('ingredient', 'amount', 'unit',)
         read_only_fields = ('ingredient', 'amount', 'unit',)
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    """Сериалайзер для подписок."""
+
+    id = serializers.IntegerField(source='following.id')
+
+    class Meta:
+        model = Follow
+        fields = ('id',)
+
+    def validate(self, data):
+        user = self.context['request'].user
+        id = data['following']['id']
+        following = get_object_or_404(User, id=id)
+        follow = Follow.objects.filter(user=user, following=following)
+        if self.context['request'].method == 'DELETE' and not follow.exists():
+            raise serializers.ValidationError('Подписки не существует.')
+        if user == following:
+            raise serializers.ValidationError(
+                'Подписка на самого себя запрещена.'
+            )
+        if follow.exists():
+            raise serializers.ValidationError(
+                'Подписка уже существует.'
+            )
+        data['user'] = user
+        return super().validate(data)
+
+    def create(self, validated_data):
+        following = User.objects.get(id=validated_data['following']['id'])
+        user = validated_data['user']
+        Follow.objects.create(following=following, user=user)
+        return following
+
+    def to_representation(self, instance):
+        request = self.context['request']
+        return UserRecipeSerializer(
+            instance, context={'request': request}
+        ).data
 
 
 class UserRecipeSerializer(serializers.ModelSerializer):
