@@ -18,9 +18,9 @@ from rest_framework.response import Response
 
 from api.constants import SHOPPING_CART_FILE_HEADERS
 from api.serializers import (
-    AvatarSerializer, DownloadShoppingCartSerializer, IngredientSerializer,
+    DownloadShoppingCartSerializer, IngredientSerializer,
     AmountSerializer, FavoriteSerializer, TagSerializer, RecipeReadSerializer,
-    RecipeWriteSerializer, ShoppingCartSerializer, UserSerializer, UserRecipeSerializer, FollowSerializer
+    RecipeWriteSerializer, ShoppingCartSerializer
 )
 from api.models import (
     Favorites, Ingredient, Recipe, ShoppingCart, Tag
@@ -30,65 +30,6 @@ from users.models import Follow
 
 
 User = get_user_model()
-
-
-class SubscribeViewSet(viewsets.ModelViewSet):
-    """Представление для подписки пользователей."""
-
-    queryset = Follow.objects.all()
-    serializer_class = FollowSerializer
-    http_method_names = ('get', 'post', 'delete',)
-    permission_classes = (IsAuthenticated,)
-
-    def get_serializer_class(self):
-        if self.request.method == 'GET':
-            return UserRecipeSerializer
-        return FollowSerializer
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
-
-    @action(
-        detail=True, methods=['post', 'delete',],
-    )
-    def subscribe(self, request, id=None):
-        """Экшн для подписки."""
-
-        following = get_object_or_404(User, id=id)
-        data = request.data
-        data['id'] = id
-        serializer = self.get_serializer(
-            data=data, context={'request': request}
-        )
-        user = self.request.user
-        if request.method == 'POST':
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        follow = self.get_queryset().filter(following=following)
-        if follow.exists():
-            follow.delete()
-            return Response(
-                status=status.HTTP_204_NO_CONTENT
-            )
-        return Response(
-            {'errors': 'Подписки не существует.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    @action(
-        detail=True, methods=['get',],
-        url_path='subscriptions'
-    )
-    def subscriptions(self, request):
-        user = request.user
-        followings_id = Follow.objects.filter(user=user).values_list(
-            'following', flat=True
-        )
-        followings = [User.objects.get(id=id) for id in followings_id]
-        serializer = self.get_serializer(followings, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -141,23 +82,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return [IsAuthorOrReadOnly(),]
 
 
-class AvatarUpdateDeleteViewSet(
-    viewsets.GenericViewSet, UpdateModelMixin, DestroyModelMixin
-):
-    """Представление для обновления/удаления аватара пользователя."""
-
-    serializer_class = AvatarSerializer
-    permission_classes = (IsAuthenticated, IsSelfUserOrReadOnly,)
-
-    def get_object(self):
-        return self.request.user
-
-    def perform_destroy(self, instance):
-        instance.avatar = None
-        instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 class AddDeleteRecipeShoppingCartViewSet(
     viewsets.GenericViewSet, CreateModelMixin, DestroyModelMixin
 ):
@@ -179,8 +103,6 @@ class AddDeleteRecipeShoppingCartViewSet(
         return super().perform_create(serializer)
 
     def perform_destroy(self, instance):
-        # obj = self.get_object()
-        # obj.delete()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
