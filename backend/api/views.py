@@ -5,7 +5,6 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-# from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import filters, generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import (
@@ -17,6 +16,7 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 
 from api.constants import SHOPPING_CART_FILE_HEADERS
+from api.filters import IngredientFilter
 from api.serializers import (
     DownloadShoppingCartSerializer, IngredientSerializer,
     AmountSerializer, FavoriteSerializer, TagSerializer, RecipeReadSerializer,
@@ -50,9 +50,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
     http_method_names = ('get',)
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^name',)
-    search_param = 'name'
+    filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -75,61 +73,131 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permissions(self):
-        if self.action == 'list':
+        if (
+            self.action == 'list'
+            or self.action == 'get_link'
+        ):
             return [ReadOnly(),]
-        if self.action == 'create':
+        if (
+            self.action == 'create'
+            or self.action == 'shoppinng_cart'
+            or self.action == 'favorite'
+        ):
             return [IsAuthenticated(),]
         return [IsAuthorOrReadOnly(),]
 
-
-class AddDeleteRecipeShoppingCartViewSet(
-    viewsets.GenericViewSet, CreateModelMixin, DestroyModelMixin
-):
-    """Представление для добавления/удаления рецепта в/из список(а) покупок."""
-
-    serializer_class = ShoppingCartSerializer
-    permission_classes = (IsAuthenticated,)
-    http_method_names = ('post', 'delete',)
-
-    def get_object(self):
-        return get_object_or_404(
-            ShoppingCart, user=self.request.user, recipe=get_object_or_404(
-                Recipe, id=self.kwargs.get('id')
+    @action(
+        ['post', 'delete'],
+        detail=True,
+        url_path='shopping_cart',
+    )
+    def shoppinng_cart(self, request, *args, **kwargs):
+        user = request.user
+        id = kwargs.get('pk')
+        recipe = get_object_or_404(Recipe, id=id)
+        if request.method == 'POST':
+            request.data['id'] = id
+            serializer = ShoppingCartSerializer(
+                data=request.data, context={'request': request}
             )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        shop_cart = ShoppingCart.objects.filter(recipe=recipe, user=user)
+        if shop_cart.exists():
+            shop_cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'detail': 'Рецепта нет в списке покупок.'},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user, id=self.kwargs.get('id'))
-        return super().perform_create(serializer)
-
-    def perform_destroy(self, instance):
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class AddDeleteRecipeToFavoriteViewSet(
-    viewsets.GenericViewSet, CreateModelMixin, DestroyModelMixin
-):
-    """Представление для добавления/удаления рецепта в/из избранное(ого)."""
-
-    serializer_class = FavoriteSerializer
-    permission_classes = (IsAuthenticated,)
-    http_method_names = ('post', 'delete',)
-
-    def get_object(self):
-        return get_object_or_404(
-            Favorites, user=self.request.user, recipe=get_object_or_404(
-                Recipe, id=self.kwargs.get('id')
+    @action(
+        ['post', 'delete'],
+        detail=True,
+        url_path='favorite',
+    )
+    def favorite(self, request, *args, **kwargs):
+        user = request.user
+        id = kwargs.get('pk')
+        recipe = get_object_or_404(Recipe, id=id)
+        if request.method == 'POST':
+            request.data['id'] = id
+            serializer = FavoriteSerializer(
+                data=request.data, context={'request': request}
             )
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        shop_cart = Favorites.objects.filter(recipe=recipe, user=user)
+        if shop_cart.exists():
+            shop_cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {'detail': 'Рецепта нет в избранном.'},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user, id=self.kwargs.get('id'))
-        return super().perform_create(serializer)
+    @action(
+        ['get',], detail=True, url_path='get-link'
+    )
+    def get_link(self, request, *args, **kwargs):
+        recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
+        short_link = recipe.short_link
+        return Response(
+            {'short-link': f'{ request.scheme }://'
+             f'{ request.get_host() }/s/{short_link}/'},
+            status=status.HTTP_200_OK
+        )
 
-    def perform_destroy(self, instance):
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+# class AddDeleteRecipeShoppingCartViewSet(
+#     viewsets.GenericViewSet, CreateModelMixin, DestroyModelMixin
+# ):
+#     """Представление для добавления/удаления рецепта в/из список(а) покупок."""
+
+#     serializer_class = ShoppingCartSerializer
+#     permission_classes = (IsAuthenticated,)
+#     http_method_names = ('post', 'delete',)
+
+#     def get_object(self):
+#         return get_object_or_404(
+#             ShoppingCart, user=self.request.user, recipe=get_object_or_404(
+#                 Recipe, id=self.kwargs.get('id')
+#             )
+#         )
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user, id=self.kwargs.get('id'))
+#         return super().perform_create(serializer)
+
+#     def perform_destroy(self, instance):
+#         instance.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# class AddDeleteRecipeToFavoriteViewSet(
+#     viewsets.GenericViewSet, CreateModelMixin, DestroyModelMixin
+# ):
+#     """Представление для добавления/удаления рецепта в/из избранное(ого)."""
+
+#     serializer_class = FavoriteSerializer
+#     permission_classes = (IsAuthenticated,)
+#     http_method_names = ('post', 'delete',)
+
+#     def get_object(self):
+#         return get_object_or_404(
+#             Favorites, user=self.request.user, recipe=get_object_or_404(
+#                 Recipe, id=self.kwargs.get('id')
+#             )
+#         )
+
+#     def perform_create(self, serializer):
+#         serializer.save(user=self.request.user, id=self.kwargs.get('id'))
+#         return super().perform_create(serializer)
+
+#     def perform_destroy(self, instance):
+#         instance.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DownloadView(viewsets.ViewSet):

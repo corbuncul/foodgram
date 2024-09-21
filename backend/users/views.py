@@ -6,12 +6,12 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from users.serializers import AvatarSerializer
+from djoser.views import UserViewSet as BaseUserViewSet
+
 from api.serializers import FollowSerializer, UserRecipeSerializer
 from api.permissions import IsCurrentUser
 from users.models import Follow
-
-from djoser.views import UserViewSet as BaseUserViewSet
+from users.serializers import AvatarSerializer
 
 
 User = get_user_model()
@@ -89,7 +89,7 @@ class UserViewSet(BaseUserViewSet):
             serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        follow = self.get_queryset().filter(following=following)
+        follow = Follow.objects.filter(user=user, following=following)
         if follow.exists():
             follow.delete()
             return Response(
