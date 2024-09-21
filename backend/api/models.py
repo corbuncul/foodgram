@@ -97,7 +97,8 @@ class Recipe(models.Model):
             MinValueValidator(constants.MIN_COOK_TIME)
         ],
         error_messages={
-            'validators': f'Время приготовления не может быть меньше {constants.MIN_COOK_TIME}'
+            'validators': 'Время приготовления не может'
+            f'быть меньше {constants.MIN_COOK_TIME}'
         }
     )
     short_link = models.CharField(
@@ -131,7 +132,7 @@ class IngredientInRecipe(models.Model):
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингредиент',
-        related_name='ingredients'
+        related_name='+'
     )
     amount = models.SmallIntegerField(
         'Количество ингредиента',
