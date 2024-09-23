@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, status
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,6 +11,7 @@ from djoser.views import UserViewSet as BaseUserViewSet
 from api.serializers import FollowSerializer, UserRecipeSerializer
 from api.permissions import IsCurrentUser
 from users.models import Follow
+from users.paginations import UserRecipePagination
 from users.serializers import AvatarSerializer
 
 
@@ -19,6 +20,8 @@ User = get_user_model()
 
 class UserViewSet(BaseUserViewSet):
     """Представление для пользователей."""
+
+    pagination_class = UserRecipePagination
 
     @action(
         ["get", "put", "patch", "delete"],
@@ -45,7 +48,9 @@ class UserViewSet(BaseUserViewSet):
     def avatar(self, request, *args, **kwargs):
         user = request.user
         if request.method == "PUT":
-            serializer = AvatarSerializer(user, data=request.data, context={'context': request})
+            serializer = AvatarSerializer(
+                user, data=request.data, context={'context': request}
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -65,8 +70,14 @@ class UserViewSet(BaseUserViewSet):
             'following', flat=True
         )
         followings = [User.objects.get(id=id) for id in followings_id]
-        serializer = UserRecipeSerializer(
-            followings, many=True, context={'request': request})
+        page = self.paginate_queryset(followings)
+        if page is not None:
+            serializer = UserRecipeSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+
+        serializer = UserRecipeSerializer(followings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
