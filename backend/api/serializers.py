@@ -1,6 +1,7 @@
 import base64
 
 from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -8,7 +9,7 @@ from rest_framework import serializers
 from api import constants
 from api.models import (
     Favorites, Ingredient, IngredientInRecipe,
-    Recipe, RecipeTag, ShoppingCart, Tag
+    Recipe, ShoppingCart, Tag
 )
 from api.utils import generate_random_str
 from users.models import Follow
@@ -332,7 +333,8 @@ class FollowSerializer(serializers.ModelSerializer):
 class UserRecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер для отображения пользователей и их рецептов."""
 
-    recipes = RecipeShortSerializer(many=True)
+    # recipes = RecipeShortSerializer(many=True)
+    recipes = serializers.SerializerMethodField('paginated_recipe')
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -356,3 +358,16 @@ class UserRecipeSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, instance):
         return instance.recipes.count()
+
+    def paginated_recipe(self, obj):
+        page_size = (
+            self.context['request'].query_params.get('recipes_limit')
+            or constants.NUMBER_OF_RECIPES
+        )
+        paginator = Paginator(obj.recipes.all(), page_size)
+        page = 1  # self.context['request'].query_params.get('page') or
+
+        users_recipe = paginator.page(page)
+        serializer = RecipeShortSerializer(users_recipe, many=True)
+
+        return serializer.data
