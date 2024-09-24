@@ -1,5 +1,5 @@
-import string
 import random
+import string
 
 from api.models import Recipe
 

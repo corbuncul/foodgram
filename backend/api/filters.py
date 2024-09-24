@@ -1,5 +1,5 @@
-from django_filters import rest_framework as filters
 from api.models import Ingredient, Recipe, Tag
+from django_filters import rest_framework as filters
 
 
 class IngredientFilter(filters.FilterSet):
@@ -21,8 +21,7 @@ class RecipeFilter(filters.FilterSet):
         field_name='tags__slug',
         queryset=Tag.objects.all(),
         to_field_name='slug',
-        conjoined=False
-    )
+        conjoined=False)
 
     class Meta:
         model = Recipe

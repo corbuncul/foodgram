@@ -1,19 +1,15 @@
+from api.permissions import IsCurrentUser
+from api.serializers import FollowSerializer, UserRecipeSerializer
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from djoser.views import UserViewSet as BaseUserViewSet
-
-from api.serializers import FollowSerializer, UserRecipeSerializer
-from api.permissions import IsCurrentUser
 from users.models import Follow
 from users.paginations import UserRecipePagination
 from users.serializers import AvatarSerializer
-
 
 User = get_user_model()
 
@@ -23,28 +19,14 @@ class UserViewSet(BaseUserViewSet):
 
     pagination_class = UserRecipePagination
 
-    @action(
-        ["get", "put", "patch", "delete"],
-        permission_classes=(IsAuthenticated, IsCurrentUser),
-        detail=False,
-    )
-    def me(self, request, *args, **kwargs):
-        self.get_object = self.get_instance
-        if request.method == "GET":
-            return self.retrieve(request, *args, **kwargs)
-        elif request.method == "PUT":
-            return self.update(request, *args, **kwargs)
-        elif request.method == "PATCH":
-            return self.partial_update(request, *args, **kwargs)
-        elif request.method == "DELETE":
-            return self.destroy(request, *args, **kwargs)
+    def get_permissions(self):
+        if self.action in ('me', 'avatar'):
+            return [IsAuthenticated(), IsCurrentUser(),]
+        if self.action in ('subscriptions', 'subscribe'):
+            return [IsAuthenticated(),]
+        return super().get_permissions()
 
-    @action(
-        ["put", "delete"],
-        permission_classes=(IsAuthenticated, IsCurrentUser),
-        detail=False,
-        url_path='me/avatar'
-    )
+    @action(["put", "delete"], detail=False, url_path='me/avatar')
     def avatar(self, request, *args, **kwargs):
         user = request.user
         if request.method == "PUT":
@@ -58,12 +40,9 @@ class UserViewSet(BaseUserViewSet):
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        ["get",],
-        permission_classes=(IsAuthenticated,),
-        detail=False,
-    )
+    @action(["get",], detail=False)
     def subscriptions(self, request, *args, **kwargs):
+        """Действие для получения пользователем подписок."""
 
         user = request.user
         followings_id = Follow.objects.filter(user=user).values_list(
@@ -80,10 +59,7 @@ class UserViewSet(BaseUserViewSet):
         serializer = UserRecipeSerializer(followings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(
-        ['post', 'delete',], detail=True,
-        permission_classes=(IsAuthenticated,)
-    )
+    @action(['post', 'delete',], detail=True,)
     def subscribe(self, request, *args, **kwargs):
         """Экшн для подписки."""
 

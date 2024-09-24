@@ -1,28 +1,22 @@
-import io
 import csv
+import io
+
+from api.constants import SHOPPING_CART_FILE_HEADERS
+from api.filters import IngredientFilter, RecipeFilter
+from api.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+from api.permissions import IsAuthorOrReadOnly, ReadOnly
+from api.serializers import (DownloadShoppingCartSerializer,
+                             FavoriteSerializer, IngredientSerializer,
+                             RecipeReadSerializer, RecipeWriteSerializer,
+                             ShoppingCartSerializer, TagSerializer)
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import (
-    AllowAny, IsAuthenticated, SAFE_METHODS
-)
+from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
-from api.constants import SHOPPING_CART_FILE_HEADERS
-from api.filters import IngredientFilter, RecipeFilter
-from api.serializers import (
-    DownloadShoppingCartSerializer, IngredientSerializer,
-    FavoriteSerializer, TagSerializer, RecipeReadSerializer,
-    RecipeWriteSerializer, ShoppingCartSerializer
-)
-from api.models import (
-    Favorites, Ingredient, Recipe, ShoppingCart, Tag
-)
-from api.permissions import IsAuthorOrReadOnly, ReadOnly
-
 
 User = get_user_model()
 
@@ -69,16 +63,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeWriteSerializer
 
     def get_permissions(self):
-        if (
-            self.action == 'list'
-            or self.action == 'get_link'
-        ):
+        if self.action in ('list', 'get_link'):
             return [ReadOnly(),]
-        if (
-            self.action == 'create'
-            or self.action == 'shopping_cart'
-            or self.action == 'favorite'
-        ):
+        if self.action in ('create', 'shopping_cart', 'favorite'):
             return [IsAuthenticated(),]
         return [IsAuthorOrReadOnly(),]
 

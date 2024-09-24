@@ -1,20 +1,16 @@
 import base64
 
+from api import constants
+from api.models import (Favorites, Ingredient, IngredientInRecipe, Recipe,
+                        ShoppingCart, Tag)
+from api.utils import generate_random_str
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
-from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-
-from api import constants
-from api.models import (
-    Favorites, Ingredient, IngredientInRecipe,
-    Recipe, ShoppingCart, Tag
-)
-from api.utils import generate_random_str
 from users.models import Follow
 from users.serializers import UserSerializer
-
 
 User = get_user_model()
 
@@ -133,7 +129,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             errors.append('Отсутствует список ингредиентов.')
         if 'ingredients' in attrs and len(attrs.get('ingredients')) == 0:
             errors.append('Список ингредиентов пуст.')
-        if 'tags' not in attrs or len(attrs.get('tags')) == 0:
+        if 'tags' not in attrs:
             errors.append('Отсутствует список тегов.')
         if 'tags' in attrs and len(attrs.get('tags')) == 0:
             errors.append('Список тегов пуст.')
@@ -333,7 +329,6 @@ class FollowSerializer(serializers.ModelSerializer):
 class UserRecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер для отображения пользователей и их рецептов."""
 
-    # recipes = RecipeShortSerializer(many=True)
     recipes = serializers.SerializerMethodField('paginated_recipe')
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -365,7 +360,7 @@ class UserRecipeSerializer(serializers.ModelSerializer):
             or constants.NUMBER_OF_RECIPES
         )
         paginator = Paginator(obj.recipes.all(), page_size)
-        page = 1  # self.context['request'].query_params.get('page') or
+        page = 1
 
         users_recipe = paginator.page(page)
         serializer = RecipeShortSerializer(users_recipe, many=True)
