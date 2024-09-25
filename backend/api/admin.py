@@ -1,6 +1,7 @@
+from django.contrib import admin
+
 from api.models import (Favorites, Ingredient, IngredientInRecipe, Recipe,
                         RecipeTag, ShoppingCart, Tag)
-from django.contrib import admin
 
 admin.site.empty_value_display = '-пусто-'
 

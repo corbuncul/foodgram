@@ -1,5 +1,3 @@
-from api.permissions import IsCurrentUser
-from api.serializers import FollowSerializer, UserRecipeSerializer
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet as BaseUserViewSet
@@ -7,6 +5,9 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from api.permissions import IsCurrentUser
+from api.serializers import FollowSerializer, UserRecipeSerializer
 from users.models import Follow
 from users.paginations import UserRecipePagination
 from users.serializers import AvatarSerializer

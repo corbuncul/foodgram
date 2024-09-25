@@ -1,15 +1,17 @@
 import csv
 import os
 
-from api.models import Ingredient
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
+
+from api.models import Ingredient
 
 
 class Command(BaseCommand):
     """Импорт данных из файлов *.csv в БД."""
 
-    help = 'Импорт данных из файла ingredients.csv, importcsv <путь к директории>.'
+    help = 'Импорт данных из файла ingredients.csv,\
+        importcsv <путь к директории>.'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -39,7 +41,8 @@ class Command(BaseCommand):
         file = self.get_file(dir)
         try:
             with open(dir + file, newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile, fieldnames=['name', 'measurement_unit',])
+                reader = csv.DictReader(
+                    csvfile, fieldnames=['name', 'measurement_unit',])
                 for row in reader:
                     try:
                         self.create_object(row)
