@@ -63,10 +63,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('list', 'get_link'):
-            return [ReadOnly(),]
+            return [ReadOnly()]
         if self.action in ('create', 'shopping_cart', 'favorite'):
-            return [IsAuthenticated(),]
-        return [IsAuthorOrReadOnly(),]
+            return [IsAuthenticated()]
+        return [IsAuthorOrReadOnly()]
 
     @action(
         ['post', 'delete'],
@@ -123,7 +123,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        ['get',], detail=True, url_path='get-link'
+        ['get'], detail=True, url_path='get-link'
     )
     def get_link(self, request, *args, **kwargs):
         """Экшн для получения короткой ссылки на рецепт."""
@@ -151,7 +151,7 @@ class DownloadView(viewsets.ViewSet):
         ).annotate(sum=Sum('recipe__ingredients__amount'))
 
     @action(
-        detail=False, methods=['get',],
+        detail=False, methods=['get'],
         url_name='download_shopping_cart'
     )
     def download(self, request):
@@ -181,8 +181,8 @@ class DownloadView(viewsets.ViewSet):
         )
 
 
-@api_view(['GET',])
-@permission_classes([AllowAny,])
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def short_link_view(request, surl):
     """
     Функция перенаправления пользователей

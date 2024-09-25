@@ -22,9 +22,9 @@ class UserViewSet(BaseUserViewSet):
 
     def get_permissions(self):
         if self.action in ('me', 'avatar'):
-            return [IsAuthenticated(), IsCurrentUser(),]
+            return [IsAuthenticated(), IsCurrentUser()]
         if self.action in ('subscriptions', 'subscribe'):
-            return [IsAuthenticated(),]
+            return [IsAuthenticated()]
         return super().get_permissions()
 
     @action(["put", "delete"], detail=False, url_path='me/avatar')
@@ -41,7 +41,7 @@ class UserViewSet(BaseUserViewSet):
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(["get",], detail=False)
+    @action(["get"], detail=False)
     def subscriptions(self, request, *args, **kwargs):
         """Действие для получения пользователем подписок."""
 
@@ -60,7 +60,7 @@ class UserViewSet(BaseUserViewSet):
         serializer = UserRecipeSerializer(followings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(['post', 'delete',], detail=True,)
+    @action(['post', 'delete'], detail=True)
     def subscribe(self, request, *args, **kwargs):
         """Экшн для подписки."""
 
