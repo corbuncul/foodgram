@@ -3,7 +3,6 @@ from api.views import (DownloadView, IngredientViewSet, RecipeViewSet,
 from django.urls import include, path
 from rest_framework import routers
 
-
 router = routers.DefaultRouter()
 
 router.register('recipes', RecipeViewSet)

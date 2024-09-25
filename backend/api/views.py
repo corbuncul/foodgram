@@ -18,7 +18,6 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-
 User = get_user_model()
 
 
