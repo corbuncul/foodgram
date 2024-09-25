@@ -122,7 +122,6 @@ DJOSER = {
     'PERMISSIONS': {
         'user': ['api.permissions.ReadOnly',],
         'user_list': ['api.permissions.ReadOnly',],
-        'user_delete': ['api.permissions.IsCurrentUser',],
     },
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
