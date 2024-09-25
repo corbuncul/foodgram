@@ -42,7 +42,7 @@ class Command(BaseCommand):
         try:
             with open(dir + file, newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(
-                    csvfile, fieldnames=['name', 'measurement_unit',])
+                    csvfile, fieldnames=['name', 'measurement_unit'])
                 for row in reader:
                     try:
                         self.create_object(row)
