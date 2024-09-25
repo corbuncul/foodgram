@@ -9,7 +9,7 @@ admin.site.empty_value_display = '-пусто-'
 
 
 class UserAdmin(BaseUserAdmin):
-    """Кастомный админ для модели User с дополнительными полями."""
+    """Админ для модели User с дополнительными полями."""
 
     list_display = (
         'pk',
@@ -19,28 +19,8 @@ class UserAdmin(BaseUserAdmin):
         'email',
         'avatar',
     )
-
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': (
-            'first_name', 'last_name', 'email', 'avatar')}),
-        ('Permissions', {'fields': (
-            'is_active', 'is_staff', 'is_superuser', 'groups',
-            'user_permissions'
-        )}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
-    )
-
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2'),
-        }),
-    )
-
-    search_fields = ('username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email',)
     ordering = ('username',)
-    filter_horizontal = ('groups', 'user_permissions')
 
 
 admin.site.register(User, UserAdmin)
