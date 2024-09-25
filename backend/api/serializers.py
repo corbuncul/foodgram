@@ -1,11 +1,12 @@
-from api import constants
-from api.models import (Favorites, Ingredient, IngredientInRecipe, Recipe,
-                        ShoppingCart, Tag)
-from api.utils import generate_random_str
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+
+from api import constants
+from api.models import (Favorites, Ingredient, IngredientInRecipe, Recipe,
+                        ShoppingCart, Tag)
+from api.utils import generate_random_str
 from users.models import Follow
 from users.serializers import Base64ImageField, UserSerializer
 
