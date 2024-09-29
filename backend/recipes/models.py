@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 
-from api import constants
+from recipes import constants
 
 User = get_user_model()
 
@@ -37,7 +38,7 @@ class Tag(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Ingredient(models.Model):
@@ -62,7 +63,7 @@ class Ingredient(models.Model):
         ordering = ('name',)
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class Recipe(models.Model):
@@ -72,51 +73,47 @@ class Recipe(models.Model):
         max_length=constants.RECIPE_NAME_MAX_LENGTH,
         verbose_name='Название рецепта',
     )
-    text = models.TextField(
-        verbose_name='Описание рецепта'
-    )
+    text = models.TextField(verbose_name='Описание рецепта')
     image = models.ImageField(
         upload_to='recipe/images/',
         blank=True,
         default=None,
-        verbose_name='Изображение рецепта'
+        verbose_name='Изображение рецепта',
     )
     author = models.ForeignKey(
-        User,
-        related_name='recipes',
-        on_delete=models.CASCADE,
-        verbose_name='Автор'
+        User, on_delete=models.CASCADE, verbose_name='Автор'
     )
     tags = models.ManyToManyField(
-        Tag, through='RecipeTag',
-        verbose_name='Теги'
+        Tag, through='RecipeTag', verbose_name='Теги'
     )
-    cooking_time = models.SmallIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления',
         validators=[
-            MinValueValidator(constants.MIN_COOK_TIME)
+            MinValueValidator(constants.MIN_COOK_TIME),
+            MaxValueValidator(constants.MAX_COOK_TIME),
         ],
         error_messages={
             'validators': 'Время приготовления не может'
-            f'быть меньше {constants.MIN_COOK_TIME}'
-        }
+            f'быть меньше {constants.MIN_COOK_TIME} или'
+            f'больше {constants.MAX_COOK_TIME}.'
+        },
     )
     short_link = models.CharField(
-        'короткая ссылка', db_index=True,
+        'короткая ссылка',
+        db_index=True,
         max_length=constants.LINK_MAX_LENGTH,
         unique=True,
     )
-    pub_date = models.DateTimeField(
-        'Дата публикации', auto_now_add=True
-    )
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ('-pub_date',)
+        default_related_name = 'recipes'
 
     def __str__(self):
-        return f'{self.name}'
+        return self.name
 
 
 class IngredientInRecipe(models.Model):
@@ -126,19 +123,20 @@ class IngredientInRecipe(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='ingredients'
+        related_name='ingredients',
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингредиент',
-        related_name='+'
+        related_name='+',
     )
-    amount = models.SmallIntegerField(
+    amount = models.PositiveSmallIntegerField(
         'Количество ингредиента',
         validators=[
-            MinValueValidator(constants.MIN_AMOUNT)
-        ]
+            MinValueValidator(constants.MIN_AMOUNT),
+            MaxValueValidator(constants.MAX_AMOUNT),
+        ],
     )
 
     class Meta:
@@ -158,10 +156,7 @@ class RecipeTag(models.Model):
         verbose_name='Рецепт',
     )
     tag = models.ForeignKey(
-        Tag,
-        on_delete=models.CASCADE,
-        verbose_name='Тег',
-        related_name='tags'
+        Tag, on_delete=models.CASCADE, verbose_name='Тег', related_name='tags'
     )
 
     class Meta:
@@ -199,7 +194,7 @@ class ShoppingCart(UserRecipeModel):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
-        default_related_name = 'is_in_shopping_cart'
+        default_related_name = 'in_shopping_cart'
 
 
 class Favorites(UserRecipeModel):
@@ -208,4 +203,4 @@ class Favorites(UserRecipeModel):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        default_related_name = 'is_favorited'
+        default_related_name = 'favorited'

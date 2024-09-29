@@ -4,7 +4,7 @@ import os
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 
-from api.models import Ingredient
+from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
@@ -15,8 +15,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            'dir', type=str,
-            help='Папка с файлами для импорта данных'
+            'dir', type=str, help='Папка с файлами для импорта данных'
         )
 
     def get_file(self, dir):
@@ -30,11 +29,7 @@ class Command(BaseCommand):
     def create_object(self, data):
         """Создание объекта модели."""
         obj, st = Ingredient.objects.get_or_create(**data)
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Объект {obj} создан.'
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f'Объект {obj} создан.'))
 
     def handle(self, *args, **kwargs):
         dir = kwargs['dir']
@@ -42,7 +37,8 @@ class Command(BaseCommand):
         try:
             with open(dir + file, newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(
-                    csvfile, fieldnames=['name', 'measurement_unit'])
+                    csvfile, fieldnames=['name', 'measurement_unit']
+                )
                 for row in reader:
                     try:
                         self.create_object(row)
@@ -56,7 +52,5 @@ class Command(BaseCommand):
                         continue
         except Exception as e:
             self.stdout.write(
-                self.style.ERROR(
-                    f'При импорте произошла ошибка {e}.'
-                )
+                self.style.ERROR(f'При импорте произошла ошибка {e}.')
             )
