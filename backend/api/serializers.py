@@ -1,17 +1,21 @@
 import base64
-import os
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
-from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer as BaseUserSerializer
 from rest_framework import serializers
 
 from recipes import constants
-from recipes.models import (Favorites, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag)
+from recipes.models import (
+    Favorites,
+    Ingredient,
+    IngredientInRecipe,
+    Recipe,
+    ShoppingCart,
+    Tag,
+)
 from recipes.utils import generate_random_str
 from users.models import Follow
 
@@ -161,8 +165,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         user = self.context['request'].user
         return (
-            user.is_authenticated
-            and obj.favorited.filter(user=user).exists()
+            user.is_authenticated and obj.favorited.filter(user=user).exists()
         )
 
     def get_is_in_shopping_cart(self, obj):
@@ -206,7 +209,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             errors.append('Список тегов пуст.')
         if 'ingredients' in attrs:
             ingredients = attrs.get('ingredients')
-            ingredient_set = {ingredient['ingredient'] for ingredient in ingredients}
+            ingredient_set = {
+                ingredient['ingredient'] for ingredient in ingredients
+            }
             if len(ingredients) != len(ingredient_set):
                 errors.append('Ингредиенты повторяются.')
             for ingredient in ingredient_set:

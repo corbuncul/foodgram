@@ -30,7 +30,9 @@ class Migration(migrations.Migration):
                 (
                     "name",
                     models.CharField(
-                        error_messages={"unnique": "Такой ингредиент уже есть."},
+                        error_messages={
+                            "unnique": "Такой ингредиент уже есть."
+                        },
                         max_length=128,
                         unique=True,
                         verbose_name="Ингредиент",
@@ -38,7 +40,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "measurement_unit",
-                    models.CharField(max_length=64, verbose_name="Единица измерения"),
+                    models.CharField(
+                        max_length=64, verbose_name="Единица измерения"
+                    ),
                 ),
             ],
             options={
@@ -61,7 +65,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(max_length=256, verbose_name="Название рецепта"),
+                    models.CharField(
+                        max_length=256, verbose_name="Название рецепта"
+                    ),
                 ),
                 ("text", models.TextField(verbose_name="Описание рецепта")),
                 (
@@ -129,11 +135,18 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(max_length=32, verbose_name="Название тега")),
+                (
+                    "name",
+                    models.CharField(
+                        max_length=32, verbose_name="Название тега"
+                    ),
+                ),
                 (
                     "slug",
                     models.SlugField(
-                        error_messages={"unique": "Тег с таким слагом уже есть."},
+                        error_messages={
+                            "unique": "Тег с таким слагом уже есть."
+                        },
                         unique=True,
                         validators=[
                             django.core.validators.RegexValidator(
@@ -225,7 +238,9 @@ class Migration(migrations.Migration):
             model_name="recipe",
             name="tags",
             field=models.ManyToManyField(
-                through="recipes.RecipeTag", to="recipes.tag", verbose_name="Теги"
+                through="recipes.RecipeTag",
+                to="recipes.tag",
+                verbose_name="Теги",
             ),
         ),
         migrations.CreateModel(
