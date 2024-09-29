@@ -2,24 +2,31 @@ import csv
 import io
 
 from django.contrib.auth import get_user_model
-from django.db.models import BooleanField, Count, Case, When, Value, Expression, ExpressionWrapper, F, Sum
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from djoser.views import UserViewSet as BaseUserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import MultiSerializerMixin
 from api.paginations import UserRecipePagination
 from api.permissions import IsAuthorOrReadOnly, IsCurrentUser, ReadOnly
-from api.serializers import (AvatarSerializer, DownloadShoppingCartSerializer,
-                             FavoriteSerializer, FollowSerializer,
-                             IngredientSerializer, RecipeReadSerializer,
-                             RecipeWriteSerializer, ShoppingCartSerializer,
-                             TagSerializer, UserRecipeSerializer)
+from api.serializers import (
+    AvatarSerializer,
+    DownloadShoppingCartSerializer,
+    FavoriteSerializer,
+    FollowSerializer,
+    IngredientSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer,
+    ShoppingCartSerializer,
+    TagSerializer,
+    UserRecipeSerializer,
+)
 from recipes.constants import SHOPPING_CART_FILE_HEADERS
 from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow
@@ -66,7 +73,9 @@ class UserViewSet(BaseUserViewSet):
     @action(['get'], detail=False)
     def subscriptions(self, request, *args, **kwargs):
         """Получение пользователем всех подписок."""
-        follows = Follow.objects.filter(user=request.user).select_related('following')
+        follows = Follow.objects.filter(user=request.user).select_related(
+            'following'
+        )
         followings = [follow.following for follow in follows]
         page = self.paginate_queryset(followings)
         if page is not None:
@@ -99,12 +108,16 @@ class UserViewSet(BaseUserViewSet):
                     {'errors': 'Подписка уже существует.}'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            serializer = FollowSerializer(data=data, context={'request': request})
+            serializer = FollowSerializer(
+                data=data, context={'request': request}
+            )
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-        deleted, st =Follow.objects.filter(user=user, following=following).delete()
+
+        deleted, st = Follow.objects.filter(
+            user=user, following=following
+        ).delete()
 
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -208,7 +221,7 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         if obj.exists():
             obj.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -240,7 +253,7 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         if obj.exists():
             obj.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,5 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS
 
+
 class MultiSerializerMixin:
     """Миксин для выбора сериалайзера из словаря `serializer_classes`."""
 
