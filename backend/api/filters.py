@@ -1,10 +1,12 @@
 from django_filters import rest_framework as filters
 
-from api.models import Ingredient, Recipe, Tag
+from recipes.models import Ingredient, Recipe, Tag
 
 
 class IngredientFilter(filters.FilterSet):
-    name = filters.CharFilter(lookup_expr='istartswith',)
+    name = filters.CharFilter(
+        lookup_expr='istartswith',
+    )
 
     class Meta:
         model = Ingredient
@@ -12,17 +14,17 @@ class IngredientFilter(filters.FilterSet):
 
 
 class RecipeFilter(filters.FilterSet):
-    author = filters.NumberFilter(
-        field_name='author__id', lookup_expr='exact')
-    is_favorited = filters.BooleanFilter(
-        method='filter_is_favorited')
+    author = filters.NumberFilter(field_name='author__id', lookup_expr='exact')
+    is_favorited = filters.BooleanFilter(method='filter_is_favorited')
     is_in_shopping_cart = filters.BooleanFilter(
-        method='filter_is_in_shopping_cart')
+        method='filter_is_in_shopping_cart'
+    )
     tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         queryset=Tag.objects.all(),
         to_field_name='slug',
-        conjoined=False)
+        conjoined=False,
+    )
 
     class Meta:
         model = Recipe
@@ -33,13 +35,13 @@ class RecipeFilter(filters.FilterSet):
         if not user.is_authenticated:
             return queryset.none()
         if value:
-            return queryset.filter(is_favorited__user=user)
-        return queryset.exclude(is_favorited__user=user)
+            return queryset.filter(favorited__user=user)
+        return queryset.exclude(favorited__user=user)
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none()
         if value:
-            return queryset.filter(is_in_shopping_cart__user=user)
-        return queryset.exclude(is_in_shopping_cart__user=user)
+            return queryset.filter(in_shopping_cart__user=user)
+        return queryset.exclude(in_shopping_cart__user=user)

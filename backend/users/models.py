@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
-from api import constants
+from recipes import constants
 
 
 class User(AbstractUser):
@@ -16,7 +16,7 @@ class User(AbstractUser):
         help_text='Введите свой электронный адрес',
         error_messages={
             'unique': 'Пользователь с таким email уже существует.',
-        }
+        },
     )
     username = models.CharField(
         max_length=constants.NAME_MAX_LENGTH,
@@ -39,12 +39,8 @@ class User(AbstractUser):
         },
         verbose_name='Имя пользователя',
     )
-    first_name = models.CharField(
-        max_length=constants.NAME_MAX_LENGTH
-    )
-    last_name = models.CharField(
-        max_length=constants.NAME_MAX_LENGTH
-    )
+    first_name = models.CharField(max_length=constants.NAME_MAX_LENGTH)
+    last_name = models.CharField(max_length=constants.NAME_MAX_LENGTH)
     avatar = models.ImageField(
         'аватар', upload_to='users/', blank=True, null=True
     )
@@ -61,8 +57,7 @@ class User(AbstractUser):
         ordering = ('username',)
         constraints = (
             models.UniqueConstraint(
-                fields=('username', 'email'),
-                name='unique_username_email'
+                fields=('username', 'email'), name='unique_username_email'
             ),
         )
 
@@ -74,22 +69,26 @@ class Follow(models.Model):
     """Модель подписок пользователей."""
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        User,
+        on_delete=models.CASCADE,
         verbose_name='Подписчик',
-        related_name='follower')
+        related_name='followers',
+    )
     following = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        User,
+        on_delete=models.CASCADE,
         verbose_name='Респондент',
-        related_name='following')
+        related_name='followings',
+    )
 
     class Meta:
         unique_together = ('user', 'following')
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
 
+    def __str__(self):
+        return f'{self.user.get_username()} -> {self.following.get_username()}'
+
     def clean(self):
         if self.user == self.following:
             raise ValidationError('Подписка на самого себя запрещена!')
-
-    def __str__(self):
-        return f'{self.user.get_username()} -> {self.following.get_username()}'

@@ -102,6 +102,8 @@ jobs:
           echo DB_PORT="${{ secrets.DB_PORT }}" >> .env
           echo SERVER_IP="${{ secrets.SERVER_IP }}" >> .env
           echo SERVER_DOMAIN="${{ secrets.SERVER_DOMAIN }}" >> .env
+          echo ALLOWED_HOSTS="${{ secrets.ALLOWED_HOSTS }}" >> .env
+          echo DEBUG="${{ secrets.DEBUG }}" >> .env
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d

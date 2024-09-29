@@ -1,4 +1,3 @@
-# flake8: noqa
 import os
 from pathlib import Path
 
@@ -6,9 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-DEBUG = False
+DEBUG = True  # os.getenv('DEBUG') != 'False'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', os.getenv('SERVER_IP'), os.getenv('SERVER_DOMAIN')]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',')
 
 CSRF_TRUSTED_ORIGINS = [f'https://{os.getenv("SERVER_DOMAIN")}']
 
@@ -24,6 +23,7 @@ INSTALLED_APPS = [
     'django_filters',
     'djoser',
     'users',
+    'recipes',
     'api',
 ]
 
@@ -64,10 +64,15 @@ DATABASES = {
         'USER': os.getenv('POSTGRES_USER', 'django'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', '5432')
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
-
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -102,17 +107,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly', 
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
-
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 6,
-
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
 }
 
 AUTH_USER_MODEL = 'users.User'
@@ -120,11 +124,15 @@ AUTH_USER_MODEL = 'users.User'
 DJOSER = {
     'HIDE_USERS': False,
     'PERMISSIONS': {
-        'user': ['api.permissions.ReadOnly',],
-        'user_list': ['api.permissions.ReadOnly',],
+        'user': [
+            'api.permissions.ReadOnly',
+        ],
+        'user_list': [
+            'api.permissions.ReadOnly',
+        ],
     },
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
-        'current_user': 'api.serializers.UserSerializer'
-    }
+        'current_user': 'api.serializers.UserSerializer',
+    },
 }
