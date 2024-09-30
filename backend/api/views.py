@@ -336,4 +336,4 @@ def short_link_view(request, surl):
     При переходе по короткой ссылке рецепта пользователи перенаправляются на страцицу рецепта.
     """
     recipe = get_object_or_404(Recipe, short_link=surl)
-    return redirect('recipe-detail', pk=recipe.id)
+    return redirect('recipes-detail', pk=recipe.id)
