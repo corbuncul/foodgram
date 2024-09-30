@@ -7,7 +7,7 @@ class MultiSerializerMixin:
     serializer_classes = None
 
     def get_serializer_class(self):
-        """Возвращает сериалайзер из словаря `serializers_classes`, соответсвующий действию."""
+        """Возвращает сериалайзер из словаря `serializers_classes` по действию."""
         try:
             if self.action in self.serializer_classes.keys():
                 return self.serializer_classes[self.action]

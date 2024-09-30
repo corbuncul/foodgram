@@ -320,7 +320,7 @@ class DownloadView(viewsets.ViewSet):
         return HttpResponse(
             csv_buffer.getvalue(),
             headers={
-                'Content-Disposition': 'attachment; filename="Shopping_cart.csv"',
+                'Content-Disposition': 'attachment; filename="Shopping.csv"',
                 'Accept': 'text/csv',
             },
             content_type='text/csv',
@@ -333,7 +333,8 @@ def short_link_view(request, surl):
     """
     Функция перенаправления пользователей.
 
-    При переходе по короткой ссылке рецепта пользователи перенаправляются на страцицу рецепта.
+    При переходе по короткой ссылке рецепта
+    пользователи перенаправляются на страцицу рецепта.
     """
     recipe = get_object_or_404(Recipe, short_link=surl)
     return redirect('recipes-detail', pk=recipe.id)
