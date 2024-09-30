@@ -65,3 +65,4 @@ docker compose exec backend python manage.py createsuperuser
 ```
 - внести данные об тегах через админ-панель по адресу
 http://localhost:8000/admin/
+проект будет доступен по адресу http://localhost:8000/
