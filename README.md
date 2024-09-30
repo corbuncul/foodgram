@@ -47,8 +47,7 @@ SERVER_DOMAIN=<Доменное имя сайта>
 ALLOWED_HOSTS=127.0.0.1,localhost,<IP-адрес сайта>,<Доменное имя сайта>
 DEBUG=<Режим отладки: True или False>
 ```
-- запустить docker-compose:
-командой:
+- запустить проект командой:
 ```
 docker compose up -d
 ```
