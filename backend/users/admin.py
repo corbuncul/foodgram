@@ -9,6 +9,7 @@ User = get_user_model()
 admin.site.empty_value_display = '-пусто-'
 
 
+@admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Админ для модели User с дополнительными полями."""
 
@@ -20,9 +21,11 @@ class UserAdmin(BaseUserAdmin):
         'email',
         'avatar',
     )
-    search_fields = ('username', 'email',)
+    search_fields = (
+        'username',
+        'email',
+    )
     ordering = ('username',)
 
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Follow)

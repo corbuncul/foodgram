@@ -14,11 +14,30 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='user',
             name='avatar',
-            field=models.ImageField(blank=True, null=True, upload_to='users/', verbose_name='аватар'),
+            field=models.ImageField(
+                blank=True,
+                null=True,
+                upload_to='users/',
+                verbose_name='аватар',
+            ),
         ),
         migrations.AlterField(
             model_name='user',
             name='username',
-            field=models.CharField(error_messages={'unique': 'Пользователь с таким именем уже существует.'}, help_text='Обязательное поле. 150 символов или меньше. Только буквы, цифры и ^[\\w.@+-]+\\Z символы.', max_length=150, unique=True, validators=[django.core.validators.RegexValidator(message='Имя пользователя может содержать только буквы, цифры и ^[\\w.@+-]+\\Z символы.', regex='^[\\w.@+-]+\\Z')], verbose_name='Имя пользователя'),
+            field=models.CharField(
+                error_messages={
+                    'unique': 'Пользователь с таким именем уже существует.'
+                },
+                help_text='Обязательное поле. 150 символов или меньше. Только буквы, цифры и ^[\\w.@+-]+\\Z символы.',
+                max_length=150,
+                unique=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message='Имя пользователя может содержать только буквы, цифры и ^[\\w.@+-]+\\Z символы.',
+                        regex='^[\\w.@+-]+\\Z',
+                    )
+                ],
+                verbose_name='Имя пользователя',
+            ),
         ),
     ]
