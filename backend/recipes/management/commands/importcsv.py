@@ -10,8 +10,10 @@ from recipes.models import Ingredient
 class Command(BaseCommand):
     """Импорт данных из файлов *.csv в БД."""
 
-    help = 'Импорт данных из файла ingredients.csv,\
-        importcsv <путь к директории>.'
+    help = (
+        'Импорт данных из файла ingredients.csv, '
+        'importcsv <путь к директории>.'
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -28,8 +30,8 @@ class Command(BaseCommand):
 
     def create_object(self, data):
         """Создание объекта модели."""
-        obj, st = Ingredient.objects.get_or_create(**data)
-        self.stdout.write(self.style.SUCCESS(f'Объект {obj} создан.'))
+        ingredient, state = Ingredient.objects.get_or_create(**data)
+        self.stdout.write(self.style.SUCCESS(f'Объект {ingredient} создан.'))
 
     def handle(self, *args, **kwargs):
         dir = kwargs['dir']

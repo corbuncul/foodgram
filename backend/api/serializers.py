@@ -9,15 +9,12 @@ from rest_framework import serializers
 
 from recipes import constants
 from recipes.models import (
-    Favorites,
     Ingredient,
     IngredientInRecipe,
     Recipe,
-    ShoppingCart,
     Tag,
 )
 from recipes.utils import generate_random_str
-from users.models import Follow
 
 User = get_user_model()
 
@@ -54,10 +51,8 @@ class UserSerializer(BaseUserSerializer):
         )
 
     def get_is_subscribed(self, following):
-        user = self.context['request'].user
-        return (
-            user.is_authenticated
-            and Follow.objects.filter(user=user, following=following).exists()
+        return self.context['request'].user in User.objects.filter(
+            followers__following=following
         )
 
 
@@ -163,16 +158,13 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        user = self.context['request'].user
-        return (
-            user.is_authenticated and obj.favorited.filter(user=user).exists()
+        return self.context['request'].user in User.objects.filter(
+            favorited__recipe=obj
         )
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context['request'].user
-        return (
-            user.is_authenticated
-            and obj.in_shopping_cart.filter(user=user).exists()
+        return self.context['request'].user in User.objects.filter(
+            in_shopping_cart__recipe=obj
         )
 
 
@@ -236,11 +228,11 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         recipe = Recipe.objects.create(**validated_data)
         for ingredient in ingredients:
             amount = ingredient['amount']
-            ingr_obj = get_object_or_404(
+            ingredient_object = get_object_or_404(
                 Ingredient, id=ingredient['ingredient']
             )
             ingr_in_recipe, st = IngredientInRecipe.objects.get_or_create(
-                ingredient=ingr_obj, recipe=recipe, amount=amount
+                ingredient=ingredient_object, recipe=recipe, amount=amount
             )
         recipe.tags.set(tags)
         return recipe
@@ -282,32 +274,6 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         )
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели списка покупок."""
-
-    recipe = RecipeShortSerializer(read_only=True)
-
-    class Meta:
-        model = ShoppingCart
-        fields = ('recipe',)
-
-    def to_representation(self, instance):
-        return RecipeShortSerializer(instance.recipe).data
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели избранного."""
-
-    recipe = RecipeShortSerializer(read_only=True)
-
-    class Meta:
-        model = Favorites
-        fields = ('recipe',)
-
-    def to_representation(self, instance):
-        return RecipeShortSerializer(instance.recipe).data
-
-
 class DownloadShoppingCartSerializer(serializers.Serializer):
     """Сериализатор для скачивания списка покупок."""
 
@@ -332,34 +298,12 @@ class DownloadShoppingCartSerializer(serializers.Serializer):
         )
 
 
-class FollowSerializer(serializers.ModelSerializer):
-    """Сериалайзер для подписок."""
-
-    id = serializers.IntegerField(source='following.id')
-
-    class Meta:
-        model = Follow
-        fields = ('id',)
-
-    def create(self, validated_data):
-        following = validated_data['following']
-        user = validated_data['user']
-        Follow.objects.create(following=following, user=user)
-        return following
-
-    def to_representation(self, instance):
-        request = self.context['request']
-        return UserRecipeSerializer(
-            instance, context={'request': request}
-        ).data
-
-
 class UserRecipeSerializer(serializers.ModelSerializer):
     """Сериалайзер для отображения пользователей и их рецептов."""
 
     recipes = serializers.SerializerMethodField('paginated_recipe')
     is_subscribed = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField()
 
     class Meta:
         model = User
@@ -387,14 +331,9 @@ class UserRecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_subscribed(self, following):
-        user = self.context['request'].user
-        return (
-            user.is_authenticated
-            and Follow.objects.filter(user=user, following=following).exists()
+        return self.context['request'].user in User.objects.filter(
+            followers__following=following
         )
-
-    def get_recipes_count(self, instance):
-        return instance.recipes.count()
 
     def paginated_recipe(self, obj):
         page_size = (
