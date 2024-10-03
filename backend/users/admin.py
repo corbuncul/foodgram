@@ -1,10 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from users.models import Follow
-
-User = get_user_model()
+from users.models import Follow, User
 
 admin.site.empty_value_display = '-пусто-'
 

@@ -2,10 +2,11 @@ import csv
 import io
 
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from djoser.views import UserViewSet as BaseUserViewSet
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -18,12 +19,10 @@ from api.permissions import IsAuthorOrReadOnly, IsCurrentUser, ReadOnly
 from api.serializers import (
     AvatarSerializer,
     DownloadShoppingCartSerializer,
-    FavoriteSerializer,
-    FollowSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
-    ShoppingCartSerializer,
+    RecipeShortSerializer,
     TagSerializer,
     UserRecipeSerializer,
 )
@@ -35,8 +34,7 @@ User = get_user_model()
 
 
 class UserViewSet(BaseUserViewSet):
-    """
-    Основные деиствия с учетной записью пользователя.
+    """Основные деиствия с учетной записью пользователя.
 
     Помимо стандартных действий с учетной записью, таких как регистрация новых
     пользователей, изменение пароля или учетных данных (возможности
@@ -47,6 +45,9 @@ class UserViewSet(BaseUserViewSet):
     """
 
     pagination_class = UserRecipePagination
+
+    def get_queryset(self):
+        return User.objects.all()
 
     def get_permissions(self):
         if self.action in ('me', 'avatar'):
@@ -73,10 +74,13 @@ class UserViewSet(BaseUserViewSet):
     @action(['get'], detail=False)
     def subscriptions(self, request, *args, **kwargs):
         """Получение пользователем всех подписок."""
-        follows = Follow.objects.filter(user=request.user).select_related(
-            'following'
+        followings = (
+            User.objects.prefetch_related('followings__following__recipes')
+            .filter(followings__user=request.user)
+            .annotate(
+                recipes_count=Count('followings__following__recipes'),
+            )
         )
-        followings = [follow.following for follow in follows]
         page = self.paginate_queryset(followings)
         if page is not None:
             serializer = UserRecipeSerializer(
@@ -90,12 +94,14 @@ class UserViewSet(BaseUserViewSet):
     @action(['post', 'delete'], detail=True)
     def subscribe(self, request, *args, **kwargs):
         """Создание и удаление подписок пользователей."""
-        id = kwargs.get('id')
         user = self.request.user
-        following = get_object_or_404(User, id=id)
-        follow = Follow.objects.filter(user=user, following=following)
-        data = request.data
-        data['id'] = id
+
+        following = get_object_or_404(
+            User.objects.prefetch_related('recipes').annotate(
+                recipes_count=Count('recipes')
+            ),
+            id=kwargs.get('id'),
+        )
 
         if request.method == 'POST':
             if user == following:
@@ -103,22 +109,22 @@ class UserViewSet(BaseUserViewSet):
                     {'errors': 'Подписка на самого себя запрещена.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            if follow.exists():
+            follow, created = Follow.objects.get_or_create(
+                user=user, following=following
+            )
+            if not created:
                 return Response(
                     {'errors': 'Подписка уже существует.}'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            serializer = FollowSerializer(
-                data=data, context={'request': request}
+            serializer = UserRecipeSerializer(
+                following, context={'request': request}
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user, following=following)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         deleted, st = Follow.objects.filter(
             user=user, following=following
         ).delete()
-
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
@@ -128,8 +134,7 @@ class UserViewSet(BaseUserViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Получение списка тегов.
+    """Получение списка тегов.
 
     Позволяет получить список всех тегов, имеющихся в базе
     одним списком.
@@ -143,8 +148,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Получение списка ингредиентов.
+    """Получение списка ингредиентов.
 
     Позволяет получить список всех инредиентов, имеющихся в базе
     одним списком. Имеется возможность поиска по имени.
@@ -160,8 +164,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
-    """
-    Рецепты.
+    """Рецепты.
 
     Предоставляет возможность получить список рецептов
     или отдельно взятый рецепт, а также получить короткую
@@ -173,19 +176,28 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     в список покупок.
     """
 
-    queryset = (
-        Recipe.objects.all()
-        .select_related('author')
-        .prefetch_related('tags', 'ingredients')
+    queryset = Recipe.objects.select_related('author').prefetch_related(
+        'tags', 'ingredients'
     )
     permission_classes = (IsAuthorOrReadOnly,)
-    filterset_class = RecipeFilter
+    filter_backends = [
+        DjangoFilterBackend,
+    ]
+    filterset_class = None
+    serializer_class = RecipeWriteSerializer
     serializer_classes = {
-        'shopping_cart': ShoppingCartSerializer,
-        'favorite': FavoriteSerializer,
-        'read': RecipeReadSerializer,
-        'write': RecipeWriteSerializer,
+        'shopping_cart': RecipeShortSerializer,
+        'favorite': RecipeShortSerializer,
+        'list': RecipeReadSerializer,
+        'retrieve': RecipeReadSerializer,
+        'create': RecipeWriteSerializer,
+        'update': RecipeWriteSerializer,
     }
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            self.filterset_class = RecipeFilter
+        return super().get_queryset()
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -206,24 +218,25 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     def shopping_cart(self, request, *args, **kwargs):
         """Добавление рецепта в список покупок и удаления оттуда."""
         user = request.user
-        id = kwargs.get('pk')
-        recipe = get_object_or_404(Recipe, id=id)
-        obj = ShoppingCart.objects.filter(recipe=recipe, user=user)
+        recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
         if request.method == 'POST':
-            if obj.exists():
+            shopping_cart, created = ShoppingCart.objects.get_or_create(
+                recipe=recipe, user=user
+            )
+            if not created:
                 return Response(
                     {'detail': 'Рецепт уже в списке покупок.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = self.get_serializer(
-                data=request.data, context={'request': request}
+                recipe, context={'request': request}
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if obj.exists():
-            obj.delete()
+        deleted, state = ShoppingCart.objects.filter(
+            recipe=recipe, user=user
+        ).delete()
+        if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
             {'detail': 'Рецепта нет в списке покупок.'},
@@ -238,24 +251,25 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     def favorite(self, request, *args, **kwargs):
         """Добавление рецепта в избранное и удаления от туда."""
         user = request.user
-        id = kwargs.get('pk')
-        recipe = get_object_or_404(Recipe, id=id)
-        obj = Favorites.objects.filter(recipe=recipe, user=user)
+        recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
         if request.method == 'POST':
-            if obj.exists():
+            favorite, created = Favorites.objects.get_or_create(
+                recipe=recipe, user=user
+            )
+            if not created:
                 return Response(
                     {'detail': 'Рецепт уже в избранном.'},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = self.get_serializer(
-                data=request.data, context={'request': request}
+                recipe, context={'request': request}
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save(user=user, recipe=recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        if obj.exists():
-            obj.delete()
+        deleted, state = Favorites.objects.filter(
+            recipe=recipe, user=user
+        ).delete()
+        if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
             {'detail': 'Рецепта нет в избранном.'},
@@ -277,8 +291,7 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
 
 
 class DownloadView(viewsets.ViewSet):
-    """
-    Скачивание файла покупок.
+    """Скачивание файла покупок.
 
     Позволяет зарегистрированным пользователям скачать список покупок.
     Список покупок скачивается одним файлов с суммированием ингредиентов
@@ -330,8 +343,7 @@ class DownloadView(viewsets.ViewSet):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def short_link_view(request, surl):
-    """
-    Функция перенаправления пользователей.
+    """Функция перенаправления пользователей.
 
     При переходе по короткой ссылке рецепта
     пользователи перенаправляются на страцицу рецепта.

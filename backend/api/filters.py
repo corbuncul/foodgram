@@ -32,16 +32,12 @@ class RecipeFilter(filters.FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
-        if not user.is_authenticated:
-            return queryset.none()
         if value:
             return queryset.filter(favorited__user=user)
         return queryset.exclude(favorited__user=user)
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
-        if not user.is_authenticated:
-            return queryset.none()
         if value:
             return queryset.filter(in_shopping_cart__user=user)
         return queryset.exclude(in_shopping_cart__user=user)

@@ -7,7 +7,16 @@ from recipes import constants
 
 
 class User(AbstractUser):
-    """Модель пользователя."""
+    """Пользователь.
+
+    Модель пользователя на основе AbstractUser.
+    Поля модели:
+        email: Email пользователя.
+        username: Имя пользователя.
+        first_name: Имя.
+        last_name: Фамилия.
+        avatar: Аватар.
+    """
 
     email = models.EmailField(
         max_length=constants.EMAIL_MAX_LENGTH,
@@ -66,7 +75,10 @@ class User(AbstractUser):
 
 
 class Follow(models.Model):
-    """Модель подписок пользователей."""
+    """Подписки пользователей.
+
+    Модель для хранения связи Подписчик - Респондент.
+    """
 
     user = models.ForeignKey(
         User,
@@ -87,7 +99,7 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки'
 
     def __str__(self):
-        return f'{self.user.get_username()} -> {self.following.get_username()}'
+        return f'{self.user.username} -> {self.following.username}'
 
     def clean(self):
         if self.user == self.following:

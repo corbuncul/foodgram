@@ -12,7 +12,12 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-    """Модель тегов."""
+    """Теги.
+
+    Поля модели:
+        name: название тега
+        slug: уникальный идентификатор тега
+    """
 
     name = models.CharField(
         max_length=constants.TAG_NAME_MAX_LENGTH,
@@ -45,7 +50,12 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    """Модель ингредиентов."""
+    """Ингредиенты.
+
+    Поля модели:
+        name: уникальное наименование ингредиента.
+        measurement_unit: единицы измерения ингредиента.
+    """
 
     name = models.CharField(
         max_length=constants.INGREDIENT_NAME_MAX_LENGTH,
@@ -70,7 +80,19 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """Модель рецептов."""
+    """Рецепты.
+
+    Модель для хранения рецептов, их описание.
+    Поля модели:
+        name: Наименование рецепта.
+        text: Описание рецепта.
+        image: Изображение готового блюда.
+        author: Автор рецепта.
+        tags: Теги рецепта.
+        cooking_time: Время приготовления рецепта.
+        short_link: Короткая ссылка на рецепт.
+        pub_date: Дата публикации рецепта.
+    """
 
     name = models.CharField(
         max_length=constants.RECIPE_NAME_MAX_LENGTH,
@@ -84,7 +106,10 @@ class Recipe(models.Model):
         verbose_name='Изображение рецепта',
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Автор'
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор',
+        related_name='recipes',
     )
     tags = models.ManyToManyField(
         Tag, through='RecipeTag', verbose_name='Теги'
@@ -113,14 +138,21 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ('-pub_date',)
-        default_related_name = 'recipes'
 
     def __str__(self):
         return self.name
 
 
 class IngredientInRecipe(models.Model):
-    """Модель, ингредиентов в рецепте."""
+    """Ингредиенты в рецепте.
+
+    Модель используется для хранения ингредиентов ,используемых в рецепте
+    и их количество.
+    Поля модели:
+        recipe: Рецепт.
+        ingredient: Ингредиенты, необходимые для рецепта.
+        amount: Количество ингредиента в рецепте.
+    """
 
     recipe = models.ForeignKey(
         Recipe,
@@ -151,7 +183,13 @@ class IngredientInRecipe(models.Model):
 
 
 class RecipeTag(models.Model):
-    """Модель тегов у рецептов."""
+    """Теги рецепта.
+
+    Модель хранит теги, присвоенные рецепту.
+    Поля модели:
+        recipe: Рецепт.
+        tag: Теги рецепта.
+    """
 
     recipe = models.ForeignKey(
         Recipe,
@@ -171,7 +209,12 @@ class RecipeTag(models.Model):
 
 
 class UserRecipeModel(models.Model):
-    """Базовая модель для списка покупок и избранного."""
+    """Базовая модель для списка покупок и избранного.
+
+    Поля модели:
+        user: Пользователь.
+        recipe: Рецепт.
+    """
 
     user = models.ForeignKey(
         User,
@@ -192,7 +235,12 @@ class UserRecipeModel(models.Model):
 
 
 class ShoppingCart(UserRecipeModel):
-    """Модель списка покупок."""
+    """Список покупок.
+
+    Модель наследуется от UserRecipeModel.
+    Имеет теже поля, что и родитель.
+    Хранит рецепты, помещенные в список покупок пользователя.
+    """
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -201,7 +249,12 @@ class ShoppingCart(UserRecipeModel):
 
 
 class Favorites(UserRecipeModel):
-    """Модель избранного."""
+    """Избранное.
+
+    Модель наследуется от UserRecipeModel.
+    Имеет теже поля, что и родитель.
+    Хранит рецепты, помещенные в список избранного пользователя.
+    """
 
     class Meta:
         verbose_name = 'Избранное'
