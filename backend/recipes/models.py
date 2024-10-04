@@ -14,9 +14,7 @@ User = get_user_model()
 class Tag(models.Model):
     """Теги.
 
-    Поля модели:
-        name: название тега
-        slug: уникальный идентификатор тега
+    Модель для хранения тегов.
     """
 
     name = models.CharField(
@@ -52,9 +50,7 @@ class Tag(models.Model):
 class Ingredient(models.Model):
     """Ингредиенты.
 
-    Поля модели:
-        name: уникальное наименование ингредиента.
-        measurement_unit: единицы измерения ингредиента.
+    Модель для хранения ингредиентов, которые могут использоваться в рецептах.
     """
 
     name = models.CharField(
@@ -83,15 +79,6 @@ class Recipe(models.Model):
     """Рецепты.
 
     Модель для хранения рецептов, их описание.
-    Поля модели:
-        name: Наименование рецепта.
-        text: Описание рецепта.
-        image: Изображение готового блюда.
-        author: Автор рецепта.
-        tags: Теги рецепта.
-        cooking_time: Время приготовления рецепта.
-        short_link: Короткая ссылка на рецепт.
-        pub_date: Дата публикации рецепта.
     """
 
     name = models.CharField(
@@ -148,10 +135,6 @@ class IngredientInRecipe(models.Model):
 
     Модель используется для хранения ингредиентов ,используемых в рецепте
     и их количество.
-    Поля модели:
-        recipe: Рецепт.
-        ingredient: Ингредиенты, необходимые для рецепта.
-        amount: Количество ингредиента в рецепте.
     """
 
     recipe = models.ForeignKey(
@@ -186,9 +169,6 @@ class RecipeTag(models.Model):
     """Теги рецепта.
 
     Модель хранит теги, присвоенные рецепту.
-    Поля модели:
-        recipe: Рецепт.
-        tag: Теги рецепта.
     """
 
     recipe = models.ForeignKey(
@@ -209,12 +189,7 @@ class RecipeTag(models.Model):
 
 
 class UserRecipeModel(models.Model):
-    """Базовая модель для списка покупок и избранного.
-
-    Поля модели:
-        user: Пользователь.
-        recipe: Рецепт.
-    """
+    """Базовая модель для списка покупок и избранного."""
 
     user = models.ForeignKey(
         User,

@@ -12,7 +12,7 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.filters import IngredientFilter, RecipeFilter
+from api.filters import IngredientFilter, RecipeFilter, RecipeTagFilter
 from api.mixins import MultiSerializerMixin
 from api.paginations import UserRecipePagination
 from api.permissions import IsAuthorOrReadOnly, IsCurrentUser, ReadOnly
@@ -95,15 +95,13 @@ class UserViewSet(BaseUserViewSet):
     def subscribe(self, request, *args, **kwargs):
         """Создание и удаление подписок пользователей."""
         user = self.request.user
-
-        following = get_object_or_404(
-            User.objects.prefetch_related('recipes').annotate(
-                recipes_count=Count('recipes')
-            ),
-            id=kwargs.get('id'),
-        )
-
         if request.method == 'POST':
+            following = get_object_or_404(
+                User.objects.prefetch_related('recipes').annotate(
+                    recipes_count=Count('recipes')
+                ),
+                id=kwargs.get('id'),
+            )
             if user == following:
                 return Response(
                     {'errors': 'Подписка на самого себя запрещена.'},
@@ -123,7 +121,7 @@ class UserViewSet(BaseUserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         deleted, st = Follow.objects.filter(
-            user=user, following=following
+            user=user, following_id=kwargs.get('id')
         ).delete()
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -197,6 +195,8 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.is_authenticated:
             self.filterset_class = RecipeFilter
+        else:
+            self.filterset_class = RecipeTagFilter
         return super().get_queryset()
 
     def perform_create(self, serializer):
@@ -218,8 +218,8 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     def shopping_cart(self, request, *args, **kwargs):
         """Добавление рецепта в список покупок и удаления оттуда."""
         user = request.user
-        recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
         if request.method == 'POST':
+            recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
             shopping_cart, created = ShoppingCart.objects.get_or_create(
                 recipe=recipe, user=user
             )
@@ -234,7 +234,7 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         deleted, state = ShoppingCart.objects.filter(
-            recipe=recipe, user=user
+            recipe_id=kwargs.get('pk'), user=user
         ).delete()
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -251,8 +251,8 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
     def favorite(self, request, *args, **kwargs):
         """Добавление рецепта в избранное и удаления от туда."""
         user = request.user
-        recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
         if request.method == 'POST':
+            recipe = get_object_or_404(Recipe, id=kwargs.get('pk'))
             favorite, created = Favorites.objects.get_or_create(
                 recipe=recipe, user=user
             )
@@ -267,7 +267,7 @@ class RecipeViewSet(MultiSerializerMixin, viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         deleted, state = Favorites.objects.filter(
-            recipe=recipe, user=user
+            recipe_id=kwargs.get('pk'), user=user
         ).delete()
         if deleted:
             return Response(status=status.HTTP_204_NO_CONTENT)
