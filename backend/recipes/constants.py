@@ -49,7 +49,7 @@ SHOPPING_CART_FILE_HEADERS = ["ingredient", "amount", "unit"]
 NUMBER_OF_RECIPES = 10
 """Количество рецептов пользователя в выдаче по умолчанию."""
 
-PAGE_SIZE = 10
+PAGE_SIZE = 6
 """Размер страницы при пагинации по умолчанию."""
 
 MAX_PAGE_SIZE = 100

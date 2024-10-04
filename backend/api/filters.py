@@ -41,3 +41,16 @@ class RecipeFilter(filters.FilterSet):
         if value:
             return queryset.filter(in_shopping_cart__user=user)
         return queryset.exclude(in_shopping_cart__user=user)
+
+
+class RecipeTagFilter(filters.FilterSet):
+    tags = filters.ModelMultipleChoiceFilter(
+        field_name='tags__slug',
+        queryset=Tag.objects.all(),
+        to_field_name='slug',
+        conjoined=False,
+    )
+
+    class Meta:
+        model = Recipe
+        fields = ['tags',]

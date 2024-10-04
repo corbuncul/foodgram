@@ -10,12 +10,6 @@ class User(AbstractUser):
     """Пользователь.
 
     Модель пользователя на основе AbstractUser.
-    Поля модели:
-        email: Email пользователя.
-        username: Имя пользователя.
-        first_name: Имя.
-        last_name: Фамилия.
-        avatar: Аватар.
     """
 
     email = models.EmailField(
