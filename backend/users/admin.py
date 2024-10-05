@@ -35,7 +35,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Follow)
 class FollowAdmin(admin.ModelAdmin):
-
+    """Админка для модели подписок."""
 
     list_display = (
         'user',
