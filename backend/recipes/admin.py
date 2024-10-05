@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
 
 from recipes.models import (
     Favorites,
@@ -22,11 +24,22 @@ class FavoritesAdmin(admin.ModelAdmin):
         'recipe',
         'user',
     )
-    search_fields = (
-        'user',
+    list_display_links = (
         'recipe',
+        'user',
     )
-    list_filter = ('user',)
+    search_fields = (
+        'user__username',
+        'recipe__name',
+    )
+    list_filter = (
+        'recipe',
+        'user',
+    )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        qs = super().get_queryset(request)
+        return qs.select_related('user', 'recipe')
 
 
 @admin.register(Ingredient)
@@ -77,11 +90,21 @@ class IngredientInRecipeAdmin(admin.ModelAdmin):
         'ingredient',
         'amount',
     )
-    search_fields = (
-        'recipe',
+    list_display_links = (
         'ingredient',
+        'recipe',
     )
-    list_filter = ('recipe',)
+    search_fields = (
+        'recipe__name',
+        'ingredient__name',
+    )
+    list_filter = (
+        'recipe',
+    )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        qs = super().get_queryset(request)
+        return qs.select_related('ingredient', 'recipe')
 
 
 @admin.register(Recipe)
@@ -94,8 +117,15 @@ class RecipeAdmin(admin.ModelAdmin):
         'name',
         'author__username',
     )
-    list_filter = ('tags__name',)
+    list_filter = (
+        'author',
+        'tags',
+    )
     list_display_links = ('name',)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        qs = super().get_queryset(request)
+        return qs.select_related('author').prefetch_related('tags', 'ingredients__ingredient')
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe: Recipe):
@@ -111,7 +141,10 @@ class RecipeTagAdmin(admin.ModelAdmin):
         'recipe',
         'tag',
     )
-    search_fields = ('recipe',)
+    list_display_links = (
+        'recipe',
+        'tag',
+    )
 
 
 @admin.register(ShoppingCart)
@@ -123,8 +156,19 @@ class ShoppingCartAdmin(admin.ModelAdmin):
         'recipe',
         'user',
     )
+    list_display_links = (
+        'recipe',
+        'user',
+    )
     search_fields = (
+        'user__username',
+        'recipe__name',
+    )
+    list_filter = (
         'user',
         'recipe',
     )
-    list_filter = ('user',)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        qs = super().get_queryset(request)
+        return qs.select_related('user', 'recipe')
