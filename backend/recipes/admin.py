@@ -125,7 +125,9 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         qs = super().get_queryset(request)
-        return qs.select_related('author').prefetch_related('tags', 'ingredients__ingredient')
+        return qs.select_related('author').prefetch_related(
+            'tags', 'ingredients__ingredient'
+        )
 
     @admin.display(description='В избранном')
     def favorited_count(self, recipe: Recipe):
