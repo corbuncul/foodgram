@@ -44,6 +44,7 @@ class RecipeFilter(filters.FilterSet):
 
 
 class RecipeTagFilter(filters.FilterSet):
+    author = filters.NumberFilter(field_name='author__id', lookup_expr='exact')
     tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         queryset=Tag.objects.all(),
@@ -53,4 +54,4 @@ class RecipeTagFilter(filters.FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ('tags',)
+        fields = ('author', 'tags',)
